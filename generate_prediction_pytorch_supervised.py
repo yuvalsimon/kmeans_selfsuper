@@ -109,10 +109,10 @@ models = torch.hub.list(gh)
 # gluon_resnet152_v1s
 # ig_resnext101_32x48d
 parser = argparse.ArgumentParser(description='IM')
-parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
+parser.add_argument('--model', dest='model', type=str, default='resnet50_infomin',
                     help='Model: one of ' + ', '.join(models))
 parser.add_argument('--imagenet', dest='imagenet_path', type=str,
-                    help='Imagenet path')
+                    help='Imagenet path. directory structure: ./[val|test|train]/*/*.jpeg')
 parser.add_argument('--objectnet', dest='objectnet_path', type=str,
                     help='Objectnet path')
 args = parser.parse_args()

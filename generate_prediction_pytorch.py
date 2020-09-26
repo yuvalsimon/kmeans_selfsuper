@@ -93,7 +93,7 @@ def eval_swav(model, loader):
     return rss, lbs
 
 
-def eval(model, loader, kwargs):
+def eval(model, loader):
     reses = []
     labs = []
 
@@ -126,10 +126,10 @@ def eval_and_save(model='resnet50_infomin', imagenet_path='~/datasets/imagenet',
 
 models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2', 'resnet50_swav']
 parser = argparse.ArgumentParser(description='IM')
-parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
+parser.add_argument('--model', dest='model', type=str, default='resnet50_infomin',
                     help='Model: one of ' + ', '.join(models))
 parser.add_argument('--imagenet', dest='imagenet_path', type=str,
-                    help='Imagenet path')
+                    help='Imagenet path. directory structure: ./[val|test|train]/*/*.jpeg')
 parser.add_argument('--objectnet', dest='objectnet_path', type=str,
                     help='Objectnet path')
 args = parser.parse_args()
