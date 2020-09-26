@@ -87,24 +87,21 @@ def eval(model, loader):
     lbs = np.concatenate(labs, axis=0)
     return rss, lbs
 
-
-imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
-imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
-objectnet_path = '/home/chaimb/objectnet-1.0'
-
 bss = {'tf_efficientnet_l2_ns_475': 8, 'gluon_resnet152_v1s': 16, 'ig_resnext101_32x48d': 16}
-def eval_and_save(model='resnet50_infomin', dim=224):
+def eval_and_save(model='resnet50_infomin', imagenet_path='~/datasets/imagenet', objectnet_path='~/datasets/objectnet', dim=224):
     mdl = torch.hub.load(gh, model, pretrained=True).cuda()
     bs = 16
-    train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, dim, 8, 1, 0)
-    obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, dim, 8, 1, 0)
-    train_embs, train_labs = eval(mdl, train_loader)
-    val_embs, val_labs = eval(mdl, val_loader)
-    obj_embs, obj_labs = eval(mdl, obj_loader)
     os.makedirs('./results', exist_ok=True)
-    np.savez(os.path.join('./results', model + '_super.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
-             val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
-
+    if(imagenet_path):
+        train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, dim, 8, 1, 0)
+        train_embs, train_labs = eval(mdl, train_loader)
+        val_embs, val_labs = eval(mdl, val_loader)
+        np.savez(os.path.join('./results', model + '-imagenet_super.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
+                val_labs=val_labs)
+    if(objectnet_path and imagenet_path):
+        obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, dim, 8, 1, 0)
+        obj_embs, obj_labs = eval(mdl, obj_loader)
+        np.savez(os.path.join('./results', model + '-objectnet_super.npz'), obj_embs=obj_embs, obj_labs=obj_labs)
 
 models = torch.hub.list(gh)
 # models to run:
@@ -114,7 +111,11 @@ models = torch.hub.list(gh)
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
                     help='Model: one of ' + ', '.join(models))
+parser.add_argument('--imagenet', dest='imagenet_path', type=str,
+                    help='Imagenet path')
+parser.add_argument('--objectnet', dest='objectnet_path', type=str,
+                    help='Objectnet path')
 args = parser.parse_args()
 
 dims = {'tf_efficientnet_l2_ns_475': 475, 'gluon_resnet152_v1s': 224, 'ig_resnext101_32x48d': 224}
-eval_and_save(args.model, dim=dims[args.model])
+eval_and_save(dim=dims[args.model], **vars(args))

@@ -12,7 +12,6 @@ from torch_utils import get_loaders_imagenet, get_loaders_objectnet
 
 device, dtype = 'cuda:0', torch.float32
 
-
 def get_model(model='resnet50_infomin'):
     if model == 'resnet50_infomin':
         args = SimpleNamespace()
@@ -109,30 +108,30 @@ def eval(model, loader, kwargs):
     lbs = np.concatenate(labs, axis=0)
     return rss, lbs
 
-
-imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
-imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
-objectnet_path = '/home/chaimb/objectnet-1.0'
-
-
-def eval_and_save(model='resnet50_infomin'):
+def eval_and_save(model='resnet50_infomin', imagenet_path='~/datasets/imagenet', objectnet_path='~/datasets/objectnet'):
     mdl = get_model(model)
     bs = 32 if model in ['resnet50_infomin'] else 16
-    train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, 224, 8, 1, 0)
-    obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, 224, 8, 1, 0)
     eval_f = eval_swav if 'swav' in model else eval
-    train_embs, train_labs = eval_f(mdl, train_loader)
-    val_embs, val_labs = eval_f(mdl, val_loader)
-    obj_embs, obj_labs = eval_f(mdl, obj_loader)
     os.makedirs('./results', exist_ok=True)
-    np.savez(os.path.join('./results', model + '.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
-             val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
-
+    if(imagenet_path):
+        train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, 224, 8, 1, 0)
+        train_embs, train_labs = eval_f(mdl, train_loader)
+        val_embs, val_labs = eval_f(mdl, val_loader)
+        np.savez(os.path.join('./results', model + '-imagenet.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
+                val_labs=val_labs)
+    if(objectnet_path and imagenet_path):
+        obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, 224, 8, 1, 0)
+        obj_embs, obj_labs = eval_f(mdl, obj_loader)
+        np.savez(os.path.join('./results', model + '-objectnet.npz'), val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2', 'resnet50_swav']
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
                     help='Model: one of ' + ', '.join(models))
+parser.add_argument('--imagenet', dest='imagenet_path', type=str,
+                    help='Imagenet path')
+parser.add_argument('--objectnet', dest='objectnet_path', type=str,
+                    help='Objectnet path')
 args = parser.parse_args()
 
-eval_and_save(args.model)
+eval_and_save(**vars(args))
